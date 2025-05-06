@@ -1,25 +1,27 @@
-package com.petshop.domain;
+package com.petshop.entity;
 
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "pets")
 public class Pet {
 
     @Id
-    @generatedValue(strategy = GenerationType.INDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nome;
     private String porte;
     private String raca;
 
-    public Pet() {
-    }
+    // Construtores, getters e setters
 
-    public Pet(Long id, String nome, String tipo, String raca) {
+    public Pet() {}
+
+    public Pet(Long id, String nome, String porte, String raca) {
         this.id = id;
         this.nome = nome;
-        this.tipo = tipo;
+        this.porte = porte;
         this.raca = raca;
     }
 
@@ -28,8 +30,9 @@ public class Pet {
     }
 
     public void setId(Long id) {
-        this.id = id
+        this.id = id;
     }
+
     public String getNome() {
         return nome;
     }
@@ -38,12 +41,12 @@ public class Pet {
         this.nome = nome;
     }
 
-    public String getTipo() {
-        return tipo;
+    public String getPorte() {
+        return porte;
     }
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
+    public void setPorte(String porte) {
+        this.porte = porte;
     }
 
     public String getRaca() {
