@@ -1,0 +1,41 @@
+# ==================================
+# Back-end (Java / Maven)
+# ==================================
+petshop-api/target/
+petshop-api/build/
+petshop-api/*.log
+petshop-api/.mvn/
+
+# Arquivos de IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+
+# ==================================
+# Front-end (React / Vite)
+# ==================================
+petshop-frontend/node_modules/
+petshop-frontend/dist/
+petshop-frontend/.vite/
+
+# Logs do Front-end
+petshop-frontend/npm-debug.log*
+petshop-frontend/yarn-debug.log*
+petshop-frontend/yarn-error.log*
+
+# Arquivos de ambiente (NUNCA envie para o GitHub)
+petshop-frontend/.env
+petshop-frontend/.env.local
+petshop-frontend/.env.*.local
+
+
+# ==================================
+# Arquivos do Sistema Operacional
+# ==================================
+.DS_Store
+Thumbs.db

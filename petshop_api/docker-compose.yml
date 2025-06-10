@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: petshop-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: petshop_db
+      MYSQL_USER: petshop
+      MYSQL_PASSWORD: petshop123
+    ports:
+      - "3307:3306" # Mantenha se quiser acessar o MySQL da sua máquina local também
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - petshop-network
+    restart: always
+
+  petshop-api: # Novo serviço para seu Spring Boot
+    build: . # Assume que o Dockerfile está na raiz do seu projeto Spring Boot
+    container_name: petshop-api-container
+    ports:
+      - "8080:8080" # Mapeia a porta da sua API para a máquina host
+    environment:
+      # Use o nome do serviço 'mysql' e a porta INTERNA '3306' dentro da rede Docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/petshop_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: petshop
+      SPRING_DATASOURCE_PASSWORD: petshop123
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_JPA_SHOW-SQL: 'true'
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+    depends_on:
+      - mysql # Garante que o MySQL suba antes da API
+    networks:
+      - petshop-network # Garante que a API esteja na mesma rede que o MySQL
+
+networks:
+  petshop-network:
+    driver: bridge
+
+volumes:
+  mysql-data:

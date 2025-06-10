@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: petshop.test.PetshopApiApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.469 s -- in petshop.test.PetshopApiApplicationTests
