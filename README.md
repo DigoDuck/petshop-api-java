@@ -1,4 +1,5 @@
 # Petshop Full-Stack (API + Interface)
+Aluno: Diogo Ribeiro Mota Sena
 
 ## 📖 Sobre o Projeto
 
