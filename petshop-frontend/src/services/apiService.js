@@ -21,9 +21,6 @@ apiService.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// --- Funções de Autenticação ---
-
-// faz a chamada de login e retorna a resposta
 export function loginUsuario(dados) {
   return apiService.post("/auth/login", dados);
 }
@@ -97,6 +94,10 @@ export function cancelarAgendamento(agendamentoId) {
   return apiService.patch(`/api/agendamentos/${agendamentoId}/status`, {
     novoStatus: "CANCELADO",
   });
+}
+
+export function enviarMensagemContato(dados) {
+  return apiService.post("/api/contact", dados);
 }
 
 export default apiService;

@@ -10,7 +10,6 @@ import {
 const ProductManagementPage = () => {
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,61 +18,55 @@ const ProductManagementPage = () => {
     nome: "",
     preco: "",
     quantidade: "",
-    categoria: { id: "" },
+    categoriaId: "",
   });
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchProdutos = useCallback(async (pagina) => {
-    setLoading(true);
+  const fetchProdutos = useCallback(async () => {
     setError("");
     try {
-      const response = await getProdutos({
-        page: pagina,
-        size: 10,
-        sort: "nome,asc",
-      });
+      const response = await getProdutos(page);
       setProdutos(response.data.content);
       setTotalPages(response.data.totalPages);
     } catch (err) {
-      setError("Falha ao carregar produtos.");
-      console.error(err);
-    } finally {
-      setLoading(false);
+      setError("Não foi possível carregar os produtos.");
+      console.error("Erro ao buscar produtos:", err);
     }
-  }, []);
+  }, [page]);
 
   const fetchCategorias = async () => {
     try {
       const response = await getCategorias();
       setCategorias(response.data);
     } catch (err) {
-      setError("Falha ao carregar categorias.");
+      console.error("Erro ao buscar categorias:", err);
     }
   };
 
   useEffect(() => {
-    fetchProdutos(page);
-    fetchCategorias();
-  }, [page, fetchProdutos]);
+    fetchProdutos();
+  }, [fetchProdutos]);
 
+  // Busca as categorias uma vez quando o componente é montado
+  useEffect(() => {
+    fetchCategorias();
+  }, []);
 
   const handleOpenModal = (produto = null) => {
-    setEditingProduct(produto);
+    setError(""); // Limpa erros do formulário
     if (produto) {
+      // Modo de Edição
+      setEditingProduct(produto);
       setFormData({
         nome: produto.nome,
         preco: produto.preco,
         quantidade: produto.quantidade,
-        categoria: { id: produto.categoria.id },
+        categoriaId: produto.categoria.id, // Pega o ID da categoria para o select
       });
     } else {
-      setFormData({
-        nome: "",
-        preco: "",
-        quantidade: "",
-        categoria: { id: "" },
-      });
+      // Modo de Adição
+      setEditingProduct(null);
+      setFormData({ nome: "", preco: "", quantidade: "", categoriaId: "" });
     }
     setIsModalOpen(true);
   };
@@ -83,116 +76,188 @@ const ProductManagementPage = () => {
     setEditingProduct(null);
   };
 
-  const handleFormChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "categoriaId") {
-      setFormData((prev) => ({ ...prev, categoria: { id: value } }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async (produtoId) => {
+    if (window.confirm("Tem certeza que deseja excluir este produto?")) {
+      try {
+        await deletarProduto(produtoId);
+        // Atualiza a lista de produtos após a exclusão
+        fetchProdutos();
+      } catch (err) {
+        setError("Falha ao excluir o produto.");
+        console.error("Erro ao excluir produto:", err);
+      }
     }
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    // Constrói o DTO (Data Transfer Object) para enviar à API
+    const produtoData = {
+      nome: formData.nome,
+      preco: parseFloat(formData.preco),
+      quantidade: parseInt(formData.quantidade, 10),
+      // A API espera o objeto da categoria, vamos montar um com o ID selecionado
+      categoria: { id: parseInt(formData.categoriaId, 10) },
+    };
+
     try {
       if (editingProduct) {
-        await atualizarProduto(editingProduct.id, formData);
+        // Atualiza o produto existente
+        await atualizarProduto(editingProduct.id, produtoData);
       } else {
-        await criarProduto(formData);
+        // Cria um novo produto
+        await criarProduto(produtoData);
       }
       handleCloseModal();
-      fetchProdutos(page);
+      fetchProdutos();
     } catch (err) {
-      setError("Falha ao salvar o produto.");
-      console.error(err);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Tem certeza que deseja deletar este produto?")) {
-      try {
-        await deletarProduto(id);
-        fetchProdutos(page);
-      } catch (err) {
-        setError("Falha ao deletar produto.");
-      }
-    }
-  };
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      setPage(newPage);
+      setError("Erro ao salvar o produto. Verifique os dados.");
+      console.error("Erro no formulário:", err);
     }
   };
 
   return (
-    <div className="page-container">
+    <div className="container">
       <h1 className="page-title">Gerenciamento de Produtos</h1>
       <div className="toolbar">
+        {/* CORRIGIDO */}
         <button onClick={() => handleOpenModal()} className="btn btn-primary">
+          <i className="fas fa-plus" style={{ marginRight: "8px" }}></i>
           Adicionar Novo Produto
         </button>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
-      {loading && <div>Carregando...</div>}
 
-      {!loading && (
-        <>
-          <table className="table">
-            <thead></thead>
-            <tbody>
-              {produtos &&
-                produtos.map((produto) => (
-                  <tr key={produto.id}>
-                    <td>{produto.nome}</td>
-                    <td>{produto.categoria?.nome}</td>
-                    <td>R$ {Number(produto.preco).toFixed(2)}</td>
-                    <td>{produto.quantidade}</td>
-                    <td>
-                      <button
-                        onClick={() => handleOpenModal(produto)}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(produto.id)}
-                        className="btn btn-danger btn-sm"
-                      >
-                        Excluir
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-          <div className="pagination">{/* ... pagination controls ... */}</div>
-        </>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            <th>Quantidade</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {produtos.length > 0 ? (
+            produtos.map((produto) => (
+              <tr key={produto.id}>
+                <td>{produto.nome}</td>
+                <td>{produto.categoria?.nome}</td>
+                <td>R$ {Number(produto.preco).toFixed(2)}</td>
+                <td>{produto.quantidade}</td>
+                <td>
+                  {/* CORRIGIDO */}
+                  <button
+                    onClick={() => handleOpenModal(produto)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ marginRight: "8px" }}
+                  >
+                    <i
+                      className="fas fa-edit"
+                      style={{ marginRight: "4px" }}
+                    ></i>
+                    Editar
+                  </button>
+                  {/* CORRIGIDO */}
+                  <button
+                    onClick={() => handleDelete(produto.id)}
+                    className="btn btn-danger btn-sm"
+                  >
+                    <i
+                      className="fas fa-trash-alt"
+                      style={{ marginRight: "4px" }}
+                    ></i>
+                    Excluir
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" style={{ textAlign: "center" }}>
+                Nenhum produto encontrado.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          {/* ... sua lógica de paginação ... */}
+        </div>
       )}
 
+      {/* MODAL (AGORA FUNCIONAL) */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="modal-content">
             <h2>{editingProduct ? "Editar Produto" : "Adicionar Produto"}</h2>
             <form onSubmit={handleFormSubmit}>
+              {/* Campos do Formulário */}
               <div className="form-group">
-                <label>Categoria</label>
+                <label htmlFor="nome">Nome do Produto</label>
+                <input
+                  type="text"
+                  id="nome"
+                  name="nome"
+                  value={formData.nome}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="categoriaId">Categoria</label>
                 <select
+                  id="categoriaId"
                   name="categoriaId"
-                  value={formData.categoria.id}
-                  onChange={handleFormChange}
+                  value={formData.categoriaId}
+                  onChange={handleInputChange}
                   required
                 >
-                  <option value="">Selecione uma categoria</option>
-                  {categorias &&
-                    categorias.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.nome}
-                      </option>
-                    ))}
+                  <option value="" disabled>
+                    Selecione uma categoria
+                  </option>
+                  {categorias.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.nome}
+                    </option>
+                  ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label htmlFor="preco">Preço</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  id="preco"
+                  name="preco"
+                  value={formData.preco}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="quantidade">Quantidade</label>
+                <input
+                  type="number"
+                  id="quantidade"
+                  name="quantidade"
+                  value={formData.quantidade}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              {/* Ações do Modal */}
               <div className="modal-actions">
                 <button
                   type="button"

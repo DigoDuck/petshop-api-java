@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { useCart } from "../../contexts/CartContext";
 
 function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
